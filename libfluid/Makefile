@@ -35,7 +35,7 @@ MOVE          = mv -f
 TAR           = tar -cf
 COMPRESS      = gzip -9f
 DISTNAME      = fluid1.0.0
-DISTDIR = /home/rsouthern/repo/temp/fluid/libfluid/obj/fluid1.0.0
+DISTDIR = /home/rsouthern/repo/libfluid/libfluid/obj/fluid1.0.0
 LINK          = g++
 LFLAGS        = -m64 -Wl,-O1 -shared -Wl,-soname,libfluid.so.1
 LIBS          = $(SUBLIBS) -L/usr/X11R6/lib64 -L/usr/lib/x86_64-linux-gnu -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/nvidia -lcudadevrt -lcuda -lcudart -lcurand -lcublas -lcublas_device -lQt5Gui -lQt5Core -lGL -lpthread 
@@ -367,7 +367,7 @@ distclean: clean
 ####### Sub-libraries
 
 includeinstall:
-	mkdir -p /home/rsouthern/repo/temp/fluid/include && cp include/*.h /home/rsouthern/repo/temp/fluid/include
+	mkdir -p /home/rsouthern/repo/libfluid/include && cp include/*.h /home/rsouthern/repo/libfluid/include
 
 mocclean: compiler_moc_header_clean compiler_moc_source_clean
 

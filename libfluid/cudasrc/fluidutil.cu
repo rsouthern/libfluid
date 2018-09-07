@@ -60,6 +60,10 @@ __device__ float dist(const float3 &A, const float3 &B)
     return sqrt(sqrdist(A, B));
 }
 
+__device__ float norm(const float3 &V) {
+    return sqrt(dot(V,V));
+}
+
 /**
  * The operator() allows this class to be used as a functor. This outputs a colour based on how much the density
  * varies from the rest density. If within the range [0,rd] the colour will vary between blue and green. If in the 

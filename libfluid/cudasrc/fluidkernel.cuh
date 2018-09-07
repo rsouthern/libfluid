@@ -20,4 +20,10 @@ __device__ float cohesionKernel(const float r);
 __device__ float boundaryDensity(const float d);
 __device__ float boundaryPressureGrad(const float d);
 
+/// Functions required by the vector mollification procedure
+/// - constructs a spinor from two (unnormalised) vectors
+__device__ float4 constructSpinor(const float3 &a, const float3 &b);
+/// - Performs the rotation of a vector by the spinor S
+__device__ float3 rotateSpinor(const float4 &S, const float3& a);
+
 #endif // FLUIDKERNEL_CUH

@@ -86,3 +86,44 @@ __device__ float boundaryPressureGrad(const float d)
     float c3 = c2 * c;
     return 1.5f * (c3 * (3.0f * c2 - 10.0f * c * params.m_h + 10.0f * params.m_h2) - 5.0f * c * params.m_h4 - 2.0f * params.m_h5) * params.m_invh6;
 }
+
+/** 
+ * constructs a spinor from two (unnormalised) vectors
+ */
+__device__ float4 constructSpinor(const float3 &a, const float3 &b) {
+    float amag = norm(a);
+    float bmag = norm(b);
+    float3 an = a / amag;
+    float3 bn = b / bmag;
+    
+    // alpha is the amount of scaling when transforming from a to b. Note that it's the square root as the 
+    // spinor is pre- and post- multiplied.
+    float alpha = sqrt(amag/bmag);
+    
+    // Find the half vector between a and b for the rotor
+    float3 c = an+bn;
+    float3 cn = c / norm(c);
+     
+    return alpha * make_float4(dot(an, cn),
+                               an.x*cn.y - an.y*cn.x,
+                               an.x*cn.z - an.z*cn.x,
+                               an.y*cn.z - an.z*cn.y);
+}
+
+/** 
+ * Performs the rotation of a vector by the spinor S
+ */
+__device__ float3 rotateSpinor(const float4 &S, const float3& a) {
+    float S__0 = S.x;
+    float S__12 = S.y;
+    float S__13 = S.z;
+    float S__23 = S.w;
+    float a__1 = a.x;
+    float a__2 = a.y;
+    float a__3 = a.z;
+
+    float3 b = make_float3(S__0*S__0*a__1 + 2.0f*S__0*S__12*a__2 + 2.0f*S__0*S__13*a__3 - a__1*S__12*S__12 + 2.0f*S__12*S__23*a__3 - a__1*S__13*S__13 - 2*S__13*S__23*a__2 + a__1*S__23*S__23,
+                       S__0*S__0*a__2 - 2.0f*S__0*S__12*a__1 + 2.0f*S__0*S__23*a__3 - a__2*S__12*S__12 - 2.0f*S__12*S__13*a__3 + a__2*S__13*S__13 - 2.0f*S__13*S__23*a__1 - a__2*S__23*S__23,
+                       S__0*S__0*a__3 - 2.0f*S__0*S__13*a__1 - 2.0f*S__0*S__23*a__2 + a__3*S__12*S__12 - 2.0f*S__12*S__13*a__2 + 2.0f*S__12*S__23*a__1 - a__3*S__13*S__13 - a__3*S__23*S__23);
+    return b;
+}

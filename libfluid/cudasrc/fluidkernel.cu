@@ -93,12 +93,13 @@ __device__ float boundaryPressureGrad(const float d)
 __device__ float4 constructSpinor(const float3 &a, const float3 &b) {
     float amag = norm(a);
     float bmag = norm(b);
+    float invbmag = 1.0/bmag;
     float3 an = a / amag;
-    float3 bn = b / bmag;
+    float3 bn = b * invbmag;
     
     // alpha is the amount of scaling when transforming from a to b. Note that it's the square root as the 
     // spinor is pre- and post- multiplied.
-    float alpha = sqrt(amag/bmag);
+    float alpha = sqrt(amag * invbmag);
     
     // Find the half vector between a and b for the rotor
     float3 c = an+bn;

@@ -330,6 +330,15 @@ void FluidSystem::advance(const float &full_dt, const uint &substeps)
             ScatterAddress_ptr); //const uint *scatterAddress
         cudaThreadSynchronize();
 
+        // Mollify the surface normals to improve our surface approximation
+        mollifyNormals<<<gridSize, blockSize>>>(
+            Normals_ptr,         //float3 *normals
+            Density_ptr,         //const float *density
+            Points_ptr,          //const float3 *points
+            CellOcc_ptr,         //const uint *cellOcc
+            ScatterAddress_ptr); //const uint *scatterAddress
+        cudaThreadSynchronize();
+
         // Calculate the pressure, surface tension, adhesion and viscosity forces in a single step
         computeAllForces<<<gridSize, blockSize>>>(
             PressureForce_ptr,

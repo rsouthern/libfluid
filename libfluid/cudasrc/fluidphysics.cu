@@ -209,6 +209,70 @@ __global__ void computeNormals(float3 *normals,
     }
 }
 
+// This function will perform the grid operation, whether it is pressure or density or whatever
+__global__ void mollifyNormals(float3 *normals,
+                               const float *density,
+                               const float3 *points,
+                               const uint *cellOcc,
+                               const uint *scatterAddress)
+{
+    // Compute the grid cell index from the block (not thread) id - this is because each block
+    // is processing a different cell - the threadIdx.x is the index of the particle in that cell
+    uint gridCellIdx = cell_from_grid(blockIdx);
+
+    // This is the value that is returned
+    float4 spinor_sum = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
+    float weight_sum = 0.0f;
+
+    // Make sure we only execute threads where we have particles
+    if (threadIdx.x < cellOcc[gridCellIdx])
+    {
+        uint thisPointIdx = scatterAddress[gridCellIdx] + threadIdx.x;
+
+        // Now we must iterate over the neighboring cells
+        int i, j, k, threadInBlockIdx;
+        uint otherGridCellIdx, otherPointIdx;
+
+        // Note that all the block checks will be the same so there should be no branching in each block
+        for (i = ((blockIdx.x == 0) ? 0 : -1); i <= ((blockIdx.x == (gridDim.x - 1)) ? 0 : 1); ++i)
+        {
+            for (j = ((blockIdx.y == 0) ? 0 : -1); j <= ((blockIdx.y == (gridDim.y - 1)) ? 0 : 1); ++j)
+            {
+                for (k = ((blockIdx.z == 0) ? 0 : -1); k <= ((blockIdx.z == (gridDim.z - 1)) ? 0 : 1); ++k)
+                {
+                    // Calculate the index of the other grid cell
+                    otherGridCellIdx = cell_from_grid(make_uint3(blockIdx.x + i, blockIdx.y + j, blockIdx.z + k));
+                    // Now iterate over all particles in this neighbouring cell
+                    for (threadInBlockIdx = 0; threadInBlockIdx < cellOcc[otherGridCellIdx]; ++threadInBlockIdx)
+                    {
+                        // Determine the index of the neighbouring point in that cell
+                        otherPointIdx = scatterAddress[otherGridCellIdx] + threadInBlockIdx;
+                        float3 rvec = points[thisPointIdx] - points[otherPointIdx];
+                        float r2 = dot(rvec, rvec);
+                        if ((otherPointIdx != thisPointIdx) &&         // Check the point indices aren't the same
+                            (density[otherPointIdx] > params.m_eps) && // Avoid divide by zero
+                            (r2 <= params.m_h2) &&                     // Don't bother if outside smoothing length
+                            (r2 > params.m_eps))                       // Avoid divide by zero
+                        {                      
+                            // Determine the weight for our mollification kernel      
+                            float r = sqrt(r2);
+                            float weight = (params.m_mass * poly6Kernel(r)) / (density[otherPointIdx]);
+                            weight_sum += weight;
+
+                            // Determine the weighted spinor using our spinor calculator
+                            spinor_sum += weight * constructSpinor(normals[thisPointIdx], normals[otherPointIdx]);                            
+                        }
+                    }
+                }
+            }
+        }
+        // Apply the resulting weighted spinor to mollify the input normal
+        float4 final_spinor = spinor_sum / weight_sum;
+        //printf("final_spinor[%d]=[%f,%f,%f,%f]\n", thisPointIdx, final_spinor.x, final_spinor.y, final_spinor.z, final_spinor.x);
+        normals[thisPointIdx] = rotateSpinor(final_spinor, normals[thisPointIdx]);
+    }
+}
+
 /**
  * This combined kernel computes all forces applied to the particles, including pressure gradient, viscosity and surface tension.
  */

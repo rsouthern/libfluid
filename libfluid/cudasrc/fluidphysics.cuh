@@ -42,6 +42,14 @@ __global__ void computeNormals(
     const uint *cellOcc,
     const uint *scatterAddress);
 
+/// My own kernel which mollifies the resultant surface normals using spinors to encode scale and rotation
+__global__ void mollifyNormals(
+    float3 *normals,
+    const float *density,
+    const float3 *points,
+    const uint *cellOcc,
+    const uint *scatterAddress);
+
 __global__ void computeAllForces(
     float3 *pressureForce,
     float3 *tensionForce,

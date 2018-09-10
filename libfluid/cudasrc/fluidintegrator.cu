@@ -68,3 +68,15 @@ __device__ void LeapfrogIntegratorOperator::operator()(Tuple t)
     thrust::get<1>(t) = vel;
     thrust::get<2>(t) = acc_next;
 }
+
+TimeStepOperator::TimeStepOperator() {
+}
+
+__device__ float TimeStepOperator::operator() (Tuple t) {
+    // Combine the force terms to be used
+    float3 force = thrust::get<0>(t) + thrust::get<1>(t) + thrust::get<2>(t) + thrust::get<3>(t);
+
+    // Determine the magnitude of the force (should probably find the sqrt of the final answer)
+    return sqrt(params.m_h / norm(force));
+}
+

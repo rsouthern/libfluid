@@ -48,4 +48,23 @@ struct LeapfrogIntegratorOperator
     __device__ void boundaryCheckSDF(float3 & /*pos*/, float3 & /*vel*/);
 };
 
+
+struct TimeStepOperator
+{
+    /// The tuple is <forces...>.
+    typedef thrust::tuple<
+                          const float3 &, // Pressure Force
+                          const float3 &, // Surface Tension Force
+                          const float3 &, // Adhesion Force
+                          const float3 &  // Viscosity Force
+                          >
+        Tuple; 
+
+    /// Construct an empty operator
+    TimeStepOperator();
+
+    /// The operator functor. Should be called with thrust::transform and a zip_iterator
+    __device__ float operator()(Tuple t);
+};
+
 #endif // FLUIDINTEGRATOR_H

@@ -27,9 +27,6 @@ struct FluidParamData
     /// The mass of each particle
     float m_mass, m_mass2, m_invMass, m_particleSize, m_invParticleSize;
 
-    /// The number time step and squared time step
-    float m_dt, m_dtdt;
-
     /// The smoothing length and precomputed versions and inversions
     float m_h, m_halfh, m_h2, m_h3, m_h4, m_h5, m_h6, m_h8, m_h9, m_invh, m_invh2, m_invh3, m_invh6, m_invh9, m_one_minus_h;
 
@@ -92,7 +89,6 @@ class FluidParams
                 const float &_accLimit = 150.0f,
                 const float &_vdamp = 1.0f,
                 const float &_particleSize = 1.0f,
-                const float &_dt = DEFAULT_TIMESTEP,
                 const float &_boundaryDensity = DEFAULT_BOUNDARY_DENSITY,
                 const float3 &_gravity = make_float3(0.0f, -9.8f, 0.0f));
 
@@ -113,7 +109,6 @@ class FluidParams
     void setVDamp(const float &_vdamp);
     void setGamma(const float &_gamma);
     void setMass(const float &_mass);
-    void setDT(const float &_dt);
     void setBoundaryDensity(const float &_boundaryDensity);
 
     /// Various getting functions in case these things need to be accessed in the host code
@@ -130,7 +125,6 @@ class FluidParams
     float getGasConstant() const { return m_data.m_gasConstant; }
     float getGamma() const { return m_data.m_gamma; }
     float getMass() const { return m_data.m_mass; }
-    float getDT() const { return m_data.m_dt; }
     float getH() const { return m_data.m_h; }
 
     void debugPrint() const;

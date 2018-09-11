@@ -4,7 +4,7 @@
 /**
  * Currently the constructor does nothing
  */
-LeapfrogIntegratorOperator::LeapfrogIntegratorOperator()
+LeapfrogIntegratorOperator::LeapfrogIntegratorOperator(const float &dt) : m_dt(dt), m_dtdt(dt*dt) 
 {
 }
 
@@ -38,7 +38,7 @@ __device__ void LeapfrogIntegratorOperator::operator()(Tuple t)
     float3 acc = thrust::get<2>(t);
 
     // Combine the force terms to be used for integration
-    float3 force = thrust::get<3>(t) + thrust::get<4>(t) + thrust::get<5>(t) + thrust::get<6>(t);
+    float3 force = thrust::get<3>(t) + thrust::get<4>(t) + thrust::get<5>(t); // + thrust::get<6>(t);
 
     float3 acc_next = force * params.m_mass + params.m_gravity;
 
@@ -50,8 +50,8 @@ __device__ void LeapfrogIntegratorOperator::operator()(Tuple t)
     }
 
     // Leapfrog integration as per https://en.wikipedia.org/wiki/Leapfrog_integration
-    pos += vel * params.m_dt + 0.5f * acc * params.m_dtdt;
-    vel += 0.5f * (acc + acc_next) * params.m_dt;
+    pos += vel * m_dt + 0.5f * acc * m_dtdt;
+    vel += 0.5f * (acc + acc_next) * m_dt;
 
     // Sanity check on our velocity to check it's within the tolerable limits
     sqr_mag = dot(vel, vel);
@@ -74,9 +74,24 @@ TimeStepOperator::TimeStepOperator() {
 
 __device__ float TimeStepOperator::operator() (Tuple t) {
     // Combine the force terms to be used
-    float3 force = thrust::get<0>(t) + thrust::get<1>(t) + thrust::get<2>(t) + thrust::get<3>(t);
+    float3 force = thrust::get<0>(t) + thrust::get<1>(t) + thrust::get<2>(t);// + thrust::get<3>(t);
 
-    // Determine the magnitude of the force (should probably find the sqrt of the final answer)
-    return sqrt(params.m_h / norm(force));
+    // there is an error in the viscosity term which I have yet to diagnose! 
+
+    // Determine the magnitude of the force (should probably find the sqrt of the final answer)    
+    
+    float tstep = sqrt(params.m_h / norm(force));
+
+    if (tstep < 0.000001) {
+        
+        printf("TimeStepOperator::operator(): forces pres=[%f,%f,%f], surf=[%f,%f,%f], adhesion=[%f,%f,%f], viscosity=[%f,%f,%f], timestep=%f\n", 
+            thrust::get<0>(t).x, thrust::get<0>(t).y, thrust::get<0>(t).z, 
+            thrust::get<1>(t).x, thrust::get<1>(t).y, thrust::get<1>(t).z, 
+            thrust::get<2>(t).x, thrust::get<2>(t).y, thrust::get<2>(t).z, 
+            thrust::get<3>(t).x, thrust::get<3>(t).y, thrust::get<3>(t).z, 
+            sqrt(params.m_h/norm(force)));
+            
+    }
+    return tstep;
 }
 

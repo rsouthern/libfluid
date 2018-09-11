@@ -109,6 +109,9 @@ class FluidSystem {
     /// The pressure computed per particle. Length = numPoints
     thrust::device_vector<float> m_Pressure;  
 
+    /// A device vector to store the optimal timestep for each particle in parallel
+    thrust::device_vector<float> m_OptimalTimestep;
+
     /// Construct a block of fluid particles to be used in the simulation
     void createFluidBlock(const uint & /*firstPtIdx*/, 
                           const uint &/*numPoints*/, 

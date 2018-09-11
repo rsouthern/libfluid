@@ -362,7 +362,8 @@ __global__ void computeAllForces(
         }
         // Write out the final force terms here
         pressureForce[thisPointIdx] = pressureSum;
-        viscosityForce[thisPointIdx] = params.m_viscosity * viscositySum;
+        //viscosityForce[thisPointIdx] = params.m_viscosity * viscositySum;
+        viscosityForce[thisPointIdx] = make_float3(0.0f,0.0f,0.0f);
         tensionForce[thisPointIdx] = params.m_surfaceTension * tensionSum;
 
         /*

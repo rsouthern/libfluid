@@ -49,10 +49,11 @@ void FluidSystem::clear()
     m_ScatterAddress.clear();
     m_Density.clear();
     m_Pressure.clear();
+    m_OptimalTimestep.clear();
 }
 
-void FluidSystem::createFluidBlock(const uint & firstPtIdx,
-                                   const uint & numPoints,
+void FluidSystem::createFluidBlock(const uint &firstPtIdx,
+                                   const uint &numPoints,
                                    const float &min_x, const float &min_y, const float &min_z,
                                    const float &max_x, const float &max_y, const float &max_z)
 {
@@ -207,9 +208,6 @@ void FluidSystem::init(const uint &_numPoints, const uint &_res)
     // The first value is the velocity limit, second is acceleration limit. Fluids v3 used [5,150].
     m_params->setLimits(5.0f, 150.0f);
 
-    // The initial DT is just a dummy time step - it will be changed when advance is called.
-    m_params->setDT(1.0f);
-
     // 0.5 is the default XSPH blending parameter defined for the dam break simulation. Values between 0 (off) and 1 are common.
     m_params->setXSPHScale(0.5f);
 
@@ -237,6 +235,7 @@ void FluidSystem::init(const uint &_numPoints, const uint &_res)
     m_Density.resize(m_params->getNumParticles(), 0.0f);
     m_SoundSpeed.resize(m_params->getNumParticles(), 0.0f);
     m_Pressure.resize(m_params->getNumParticles(), 0.0f);
+    m_OptimalTimestep.resize(m_params->getNumParticles(), 0.0f);
 
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess)
@@ -273,17 +272,17 @@ void FluidSystem::advance(const float &full_dt, const uint &substeps)
     float3 *ViscosityForce_ptr = thrust::raw_pointer_cast(&m_ViscosityForce[0]);
     float3 *AdhesionForce_ptr = thrust::raw_pointer_cast(&m_AdhesionForce[0]);
     float3 *TensionForce_ptr = thrust::raw_pointer_cast(&m_TensionForce[0]);
+    
+    // dt stores the amount of time that has already elapsed to date. The actual partial time step is
+    // determined using the variable timestep method of Monaghan '99.
+    float dt = 0.0f;    
+    float part_dt = 0.0f;
 
-    // Perform substep iterations
-    float dt;
-    float part_dt = full_dt / float(substeps);
-
-    // Set up the parameters and synchronise on the GPU if necessary
-    m_params->setDT(part_dt);
+    // Set up the parameters and synchronise on the GPU if necessary        
     m_params->sync();
     m_params->debugPrint();
 
-    for (dt = part_dt; dt <= full_dt; dt += part_dt)
+    while (dt < full_dt)
     {
         // Perform a point hash operation using thrust
         thrust::fill(m_CellOcc.begin(), m_CellOcc.end(), 0);                      // clear the existing list
@@ -355,8 +354,24 @@ void FluidSystem::advance(const float &full_dt, const uint &substeps)
             ScatterAddress_ptr);
         cudaThreadSynchronize();
 
-        // Perform the integration using our leapfrog integrator
-        LeapfrogIntegratorOperator leapfrog;
+        // At this point we are able to compute the optimal timestep for the simulation
+        // This first transform operation determines the optimal timestep based on the forces applied to each particle.
+        TimeStepOperator tsop;
+        thrust::transform(thrust::make_zip_iterator(thrust::make_tuple(m_PressureForce.begin(),
+                                                                       m_TensionForce.begin(),
+                                                                       m_AdhesionForce.begin(),
+                                                                       m_ViscosityForce.begin())),
+                          thrust::make_zip_iterator(thrust::make_tuple(m_PressureForce.end(),
+                                                                       m_TensionForce.end(),
+                                                                       m_AdhesionForce.end(),
+                                                                       m_ViscosityForce.end())),
+                          m_OptimalTimestep.begin(), tsop);
+
+        // We now need to find the minimum of all of these values as well as the remaining time for this parent time step
+        part_dt = thrust::reduce(m_OptimalTimestep.begin(), m_OptimalTimestep.end(), full_dt - dt, thrust::minimum<float>());
+        std::cout << "Partial timestep "<< part_dt << " of "<<dt<<" ("<<full_dt<<")\n";
+        // Perform the integration using our leapfrog integrator. The operator is constructed with the elapsed time.
+        LeapfrogIntegratorOperator lfop(part_dt);
 
         // Set a tuple consisting of the points, velocity, force, acceleration to the gpu
         thrust::for_each(thrust::make_zip_iterator(thrust::make_tuple(m_Points.begin(),
@@ -373,7 +388,7 @@ void FluidSystem::advance(const float &full_dt, const uint &substeps)
                                                                       m_TensionForce.end(),
                                                                       m_AdhesionForce.end(),
                                                                       m_ViscosityForce.end())),
-                         leapfrog);
+                         lfop);
 
         // Apply XSPH to smooth the velocity between time steps
         correctVelocityXSPH<<<gridSize, blockSize>>>(
@@ -383,6 +398,9 @@ void FluidSystem::advance(const float &full_dt, const uint &substeps)
             CellOcc_ptr,
             ScatterAddress_ptr);
         cudaThreadSynchronize();
+
+        // Update the elapsed time based on the variable time step
+        dt += part_dt;
     }
 }
 

@@ -39,17 +39,21 @@ struct LeapfrogIntegratorOperator
         Tuple; // STATIC/DYNAMIC
 
     /// Construct an empty operator
-    LeapfrogIntegratorOperator();
+    LeapfrogIntegratorOperator(const float &dt);
 
     /// The operator functor. Should be called with thrust::transform and a zip_iterator
     __device__ void operator()(Tuple t);
 
     /// Perform a basic boundary check to correct the position and velocity
     __device__ void boundaryCheckSDF(float3 & /*pos*/, float3 & /*vel*/);
+
+    /// Store dt here rather than in the constant structure
+    float m_dt;
+    float m_dtdt;
 };
 
 
-struct TimeStepOperator
+struct TimeStepOperator 
 {
     /// The tuple is <forces...>.
     typedef thrust::tuple<

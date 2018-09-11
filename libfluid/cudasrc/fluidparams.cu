@@ -22,7 +22,6 @@ FluidParams::FluidParams(const uint &_res,
                          const float &_accLimit,
                          const float &_vdamp,
                          const float &_particleSize,
-                         const float &_dt,
                          const float &_boundaryDensity,
                          const float3 &_gravity) : m_dirty(true)
 {
@@ -40,7 +39,6 @@ FluidParams::FluidParams(const uint &_res,
     setXSPHScale(_xsphScale);
     setVDamp(_vdamp);
     setParticleSize(_particleSize);
-    setDT(_dt);
     setBoundaryDensity(_boundaryDensity);
 
     // These two parameters are unlikely to be changed during the simulation, but this can be easily modified in future
@@ -195,15 +193,6 @@ void FluidParams::setParticleSize(const float &_particleSize)
     m_dirty = true;
 }
 
-void FluidParams::setDT(const float &_dt)
-{
-    if (m_data.m_dt == _dt)
-        return;
-    m_data.m_dt = _dt;
-    m_data.m_dtdt = _dt * _dt;
-    m_dirty = true;
-}
-
 void FluidParams::setVDamp(const float &_vdamp)
 {
     if (m_data.m_vdamp == _vdamp)
@@ -234,7 +223,7 @@ void FluidParams::debugPrint() const
     std::cout << "FluidParams:\n";
     std::cout << "res: " << m_data.m_res << ", numCells: " << m_data.m_numCells << ", numParticles: " << m_data.m_numParticles << "\n";
     std::cout << "restDensity: " << m_data.m_restDensity << ", gasConstant: " << m_data.m_gasConstant << ", mass: " << m_data.m_mass << " invMass: " << m_data.m_invMass << "\n";
-    std::cout << "dt: " << m_data.m_dt << ", h: " << m_data.m_h << ", m_vdamp: " << m_data.m_vdamp << ", particleSize: " << m_data.m_particleSize << "\n";
+    std::cout << "h: " << m_data.m_h << ", m_vdamp: " << m_data.m_vdamp << ", particleSize: " << m_data.m_particleSize << "\n";
     std::cout << "Adhesion: " << m_data.m_adhesion << ", Viscosity: " << m_data.m_viscosity << ", SurfaceTension: " << m_data.m_surfaceTension << "\n";
     std::cout << "kernel coefficients: " << m_data.m_poly6Coeff << ", " << m_data.m_gradPoly6Coeff << ", " << m_data.m_lapPoly6Coeff << "\n";
 }

@@ -74,9 +74,9 @@ int main(int argc, char *argv[])
     std::vector<float3> velocity(std::atoi(argv[1]));
     std::vector<float3> colour(std::atoi(argv[1]));
 
-    float dt = 0.002f;
+    float dt = 0.01f;
     uint substeps = 1;
-    for (uint i=0; i<2000; ++i) {
+    for (uint i=0; i<500; ++i) {
         dumpToGeo(points, colour, i);
         std::cout << "Timestep="<<dt * float(i+1) << "\n";
         splash.advance(dt, substeps);

@@ -15,10 +15,10 @@ QMAKE_CXXFLAGS += -std=c++11 -fPIC
 HEADERS+=cudasrc/*.cuh
 
 # Directories
-INCLUDEPATH += ${CUDA_SAMPLES_PATH}/common/inc ${PWD}/../common/include include ${CUDA_PATH}/include ${CUDA_PATH}/include/cuda 
+INCLUDEPATH += ${CUDA_SAMPLES}/common/inc ${PWD}/../common/include include ${CUDA_PATH}/include ${CUDA_PATH}/include/cuda 
 
 # Link with the following libraries
-linux:LIBS += -L/usr/lib/x86_64-linux-gnu -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/nvidia -lcudadevrt -lcuda -lcudart -lcurand -lcublas -lcublas_device
+linux:LIBS += -L/usr/lib/x86_64-linux-gnu -L${CUDA_PATH}/lib64 -L${CUDA_PATH}/lib64/nvidia -L/usr/lib64/nvidia -lcudadevrt -lcuda -lcudart -lcurand -lcublas -lcublas_device
 
 # LIBS += -L/usr/lib/x86_64-linux-gnu -lcuda -lcudart -lcudadevrt -lcurand
 macx:LIBS = -L/usr/local/cuda/lib/ -lcudadevrt -lcuda -lcudart -lcurand
@@ -69,7 +69,7 @@ cudalink.input = CUDA_OBJ
 cudalink.CONFIG = combine
 cudalink.output = $$OBJECTS_DIR/cuda_link.o
  
-# Tweak arch according to your hw's compute capability
+# Tweak arch according to your hws compute capability
 cudalink.commands = $$NVCCBIN $$NVCCFLAGS $$CUDA_INC -dlink ${QMAKE_FILE_NAME} -o ${QMAKE_FILE_OUT} $$LIBS
 cudalink.dependency_type = TYPE_C
 cudalink.depend_command = $$NVCCBIN $$NVCCFLAGS -M $$CUDA_INC ${QMAKE_FILE_NAME}

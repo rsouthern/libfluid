@@ -8,6 +8,7 @@
 /// Dump our data from the fluid problem to a file
 void dumpToGeo(const std::vector<float3> &points, 
                const std::vector<float3> &colour,
+               const float &psize, 
                const uint cnt) {
     char fname[100];
     std::sprintf(fname,"geo/sph.%04d.geo", cnt);
@@ -25,20 +26,21 @@ void dumpToGeo(const std::vector<float3> &points,
     ss << "NPoints " << points.size() << " NPrims 1\n";
     ss << "NPointGroups 0 NPrimGroups 1\n";
     // this is hard coded but could be flexible we have 1 attrib which is Colour
-    ss << "NPointAttrib 1  NVertexAttrib 0 NPrimAttrib 2 NAttrib 0\n";
+    ss << "NPointAttrib 2 NVertexAttrib 0 NPrimAttrib 2 NAttrib 0\n";
     // now write out our point attrib this case Cd for diffuse colour
     ss <<"PointAttrib \n";
     // default the colour to white
-    ss <<"Cd 3 float 1 1 1\n";    
+    ss <<"Cd 3 float 1 1 1\npscale 1 float " << psize << '\n';    
+    //
     // now we write out the particle data in the format
     // x y z 1 (attrib so in this case colour)
     std::vector<float3>::const_iterator pit,vit;
     for(pit = points.begin(), vit = colour.begin(); pit != points.end(); ++pit, ++vit) 
     {
         // Write out the point coordinates and a "1" (not sure what this is for)
-        ss<< (*pit).x <<" "<< (*pit).y <<" "<< (*pit).z << " 1 ";
-        // Output the colour attribute (lets leave it white)
-        ss<<"("<< (*vit).x <<" "<< (*vit).y <<" "<< (*vit).z <<")\n";
+        ss<< (*pit).x <<' '<< (*pit).y <<' '<< (*pit).z << " 1 ";
+        // Output the colour attribute
+        ss<<'('<< (*vit).x <<' '<< (*vit).y <<' '<< (*vit).z << ' ' << psize << ")\n";
     }
   
     // now write out the index values
@@ -67,7 +69,9 @@ int main(int argc, char *argv[])
         exit(0);
     }
     MyFluidSystem splash;
+    
     splash.setup(std::atoi(argv[1]), std::atoi(argv[2]));
+    float psize = splash.getPointSize();
 
     // Set up an output structure
     std::vector<float3> points(std::atoi(argv[1]));
@@ -76,9 +80,9 @@ int main(int argc, char *argv[])
 
     float dt = 0.01f;
     uint substeps = 1;
-    for (uint i=0; i<500; ++i) {
-        dumpToGeo(points, colour, i);
-        std::cout << "Timestep="<<dt * float(i+1) << "\n";
+    for (uint i=0; i<500; ++i) {    
+        dumpToGeo(points, colour, psize, i);        
+        std::cout << "Timestep="<<dt * float(i+1) << '\n';
         splash.advance(dt, substeps);
         splash.exportToData(points, colour, velocity);        
     }

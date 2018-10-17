@@ -54,23 +54,23 @@ __global__ void computeDensity(float *pressure,
         // Assign the density as the sum. If there are no nearby particles assign the rest density.
         float d = fabs(boundarySDF(points[thisPointIdx]));
         float correctedDensity = sum;
+
+        /*
         if (d < params.m_h)
         {
-            //float mass = params.m_restDensity * params.m_h2 * 1.0472f * (3.0 * params.m_h - d);
-            correctedDensity += params.m_restDensity * (1.0f - boundaryDensity(d));
-        }
-
+            float mass = params.m_restDensity * params.m_h2 * 1.0472f * (3.0 * params.m_h - d);
+            correctedDensity += mass * params.m_restDensity * (1.0f - boundaryDensity(d));
+        }*/
         density[thisPointIdx] = (sum == 0.0f) ? params.m_restDensity : correctedDensity;
 
+        /*
         // Correct for the boundary density here based on Fujisawa and Miura "An Efficient Boundary Handling with a Modified Density
         // Calculation for SPH" available here: https://onlinelibrary.wiley.com/doi/pdf/10.1111/cgf.12754
-        /*
         float d = fabs(boundarySDF(points[thisPointIdx]));
         if (d < params.m_h) {
             
-            density[thisPointIdx] += (boundaryDensity(d));
-        }
-        */
+            density[thisPointIdx] += boundaryDensity(d);
+        }*/
 
         // This is the formulation based on WCSPH: MONAGHAN, J. 2005. Smoothed particle hydrodynamics. Rep. Prog. Phys. 68, 1703–1759
         // This is often referred to as the Tait Equation of State. The alternative formulation (from Muller) corresponds to the Ideal Gas law, with gamma=1.
@@ -362,11 +362,11 @@ __global__ void computeAllForces(
         }
         // Write out the final force terms here
         pressureForce[thisPointIdx] = pressureSum;
-        //viscosityForce[thisPointIdx] = params.m_viscosity * viscositySum;
-        viscosityForce[thisPointIdx] = make_float3(0.0f,0.0f,0.0f);
+        viscosityForce[thisPointIdx] = params.m_viscosity * viscositySum;
+        //viscosityForce[thisPointIdx] = make_float3(0.0f,0.0f,0.0f);
         tensionForce[thisPointIdx] = params.m_surfaceTension * tensionSum;
 
-        /*
+        
         // Use this to compute the pressure contribution from the boundary
         float d = fabs(boundarySDF(points[thisPointIdx]));
         if (d < params.m_h) {
@@ -376,7 +376,7 @@ __global__ void computeAllForces(
             // Compute the mass for the spherical cap defined by the intersection of the boundary and the
             // sphere about the particle with radius h. This is the product of the density and the volume 
             // of the spherical cap, defined here https://en.wikipedia.org/wiki/Spherical_cap.
-            float mass = params.m_restDensity * params.m_h2 * 1.0472f * (3.0 * params.m_h - d);
+            float mass = params.m_restDensity * params.m_h2 * 1.0472f * (3.0f * params.m_h - d);
 
             // Compute the pressure gradient contribution from the boundary surface represented by the spherical cap 
             // Note that this is given by the standard equation for pressure with the integrated pressure gradient 
@@ -390,7 +390,7 @@ __global__ void computeAllForces(
             pressureForce[thisPointIdx] += pressureCorrect;
         
         } 
-        */
+        
 
         // Adhesion force involves the fluid particles sticking to the bounding planes
         adhesionForce[thisPointIdx] = make_float3(0.0f, 0.0f, 0.0f);

@@ -72,18 +72,21 @@ __device__ void LeapfrogIntegratorOperator::operator()(Tuple t)
 TimeStepOperator::TimeStepOperator() {
 }
 
+/**
+ * This functor implements a reduced CFL adaptive time step condition. The full condition includes a viscosity
+ * term which is going to be pretty hard to evaluate efficiently in parallel. The results of this are reasonably
+ * efficient, but errors are resulting from the viscocity term which I need to figure out!
+ */
 __device__ float TimeStepOperator::operator() (Tuple t) {
     // Combine the force terms to be used
+    // *** there is an error in the viscosity term which I have yet to diagnose! ***
     float3 force = thrust::get<0>(t) + thrust::get<1>(t) + thrust::get<2>(t);// + thrust::get<3>(t);
-
-    // there is an error in the viscosity term which I have yet to diagnose! 
-
-    // Determine the magnitude of the force (should probably find the sqrt of the final answer)    
     
+    // Determine the magnitude of the force (should probably find the sqrt of the final answer)    
     float tstep = sqrt(params.m_h / norm(force));
 
-    if (tstep < 0.000001) {
-        
+    if (tstep < params.m_eps) {
+        // This is an error check - if the tstep is too small then problems occur
         printf("TimeStepOperator::operator(): forces pres=[%f,%f,%f], surf=[%f,%f,%f], adhesion=[%f,%f,%f], viscosity=[%f,%f,%f], timestep=%f\n", 
             thrust::get<0>(t).x, thrust::get<0>(t).y, thrust::get<0>(t).z, 
             thrust::get<1>(t).x, thrust::get<1>(t).y, thrust::get<1>(t).z, 

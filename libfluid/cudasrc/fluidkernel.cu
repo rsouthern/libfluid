@@ -1,6 +1,7 @@
 #include "fluidkernel.cuh"
 #include "fluidutil.cuh"
 #include "fluidparams.cuh"
+#include "helper_math.h"
 
 __device__ float poly6Kernel(const float r)
 {

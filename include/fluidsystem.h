@@ -75,6 +75,9 @@ class FluidSystem {
     /// Set the particle mass. This is the same for all particles in this implementation. Should be based on initial density and volume.
     void setMass(const float& _mass);
 
+    /// Retrieve the point size
+    float getPointSize() const;
+
   protected:
     /// Keep track of whether the simulation is ready to start
     bool m_isInit;

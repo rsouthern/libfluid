@@ -3,7 +3,7 @@
 
 #include "fluiddefines.h"
 // added by jon
-#include "helper_math.h"
+//#include "helper_math.h"
 /**
  * This is the structure that will be copied across to the GPU. Note that dynamic initialisation is not supported
  * by __constant__ structs so we will need to set these in the manager class FluidParams.

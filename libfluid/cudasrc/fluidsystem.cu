@@ -469,3 +469,8 @@ void FluidSystem::setMass(const float &_mass)
 {
     m_params->setMass(_mass);
 }
+
+/// Retrieve the point size for this particle
+float FluidSystem::getPointSize() const {
+    return m_params->getParticleSize();
+}
